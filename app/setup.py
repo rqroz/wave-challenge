@@ -4,20 +4,22 @@ import structlog
 
 from flask import Flask
 
+from app.config import Config
 from app.logging import logging_setup
 from app.errors import errors_setup
+from app.database import database_setup
 from app.blueprints import views_setup
-
 
 def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__)
     app.config.from_mapping(
-        SECRET_KEY='dev',
+        SECRET_KEY=Config.SECRET_KEY,
         DATABASE=os.path.join(app.instance_path, 'sqlite'),
     )
     logging_setup()
     errors_setup(app)
+    database_setup(app)
     views_setup(app)
 
     @app.after_request
