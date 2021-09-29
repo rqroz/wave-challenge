@@ -16,6 +16,15 @@ class Employee(DATABASE.Model):
     job_group = Column(String(1))
 
 
+class EmployeeWorkReport(DATABASE.Model):
+    """
+    Represents the report generated from the CSV file.
+    """
+    __tablename__ = 'employee_work_reports'
+
+    id = Column(Integer, primary_key=True)
+
+
 class EmployeeWorkUnit(DATABASE.Model):
     """
     Represents a unit of data for a work entry for a certain employee.
@@ -24,6 +33,6 @@ class EmployeeWorkUnit(DATABASE.Model):
 
     id = Column(Integer, primary_key=True)
     employee_id = Column(Integer, ForeignKey(Employee.id), nullable=False)
-    time_report_id = Column(Integer, nullable=False)
+    report_id = Column(Integer, ForeignKey(EmployeeWorkReport.id), nullable=False)
     hours_worked = Column(Float, nullable=False)
     date = Column(Date, nullable=False)

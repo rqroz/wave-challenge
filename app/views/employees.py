@@ -1,7 +1,7 @@
 """
 Employee-related blueprint/views.
 """
-from flask import Blueprint
+from flask import Blueprint, request
 
 from app.controllers.employees import EmployeeController, EmployeeControllerException
 from app.errors import create_error_response
@@ -15,7 +15,18 @@ def process_employees_csv():
     """
     Processes CSV file with employee information.
     """
-    return {'message': 'TODO'}
+    try:
+        source = request.files['source']
+    except KeyError:
+        return create_error_response({'message': 'Missing source file'}, 400)
+
+    controller = EmployeeController()
+    try:
+        controller.process_csv(source)
+    except EmployeeControllerException as err:
+        return create_error_response({'message': str(err)}, 400)
+
+    return {'message': 'Employee work hours saved'}
 
 
 @BLUEPRINT.route('/report', methods=['GET'])
@@ -29,4 +40,4 @@ def process_report():
     except EmployeeControllerException as err:
         return create_error_response({'message': str(err)}, 400)
 
-    return report
+    return {'payrollReport': {'employeeReports': report}}
