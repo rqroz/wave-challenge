@@ -12,7 +12,7 @@ class Environments:
 class Defaults:
     ENVIRONMENT = Environments.DEVELOPMENT
     LOG_LEVEL = 'DEBUG'
-    SECRET_KEY = 'SETUPANENVIRONMENTVARIABLE-LOOKATCONFIG.PY'
+    SECRET_KEY = 'dummy-secret'
 
     class DB:
         HOST = 'localhost'
