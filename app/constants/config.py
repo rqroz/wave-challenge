@@ -6,6 +6,7 @@ Config-level constants.
 class Environments:
     PRODUCTION = 'prod'
     DEVELOPMENT = 'dev'
+    TESTING = 'test'
 
 
 class Defaults:

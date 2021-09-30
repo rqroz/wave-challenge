@@ -3,4 +3,7 @@ setup:
 	.venv/bin/pip install -r requirements/common.txt
 
 run:
-	scripts/run.sh
+	(source .venv/bin/activate && scripts/run.sh)
+
+test:
+	(source .venv/bin/activate && scripts/test.sh)

@@ -39,7 +39,7 @@ class EmployeeController(object):
             db_session = g.db.session
         self.db_session = db_session
 
-    def _recorver_report_id(self, source: FileStorage) -> int:
+    def _resolve_report_id(self, source: FileStorage) -> int:
         """
         Resolves the report id from a certain source file.
 
@@ -82,7 +82,7 @@ class EmployeeController(object):
         Args:
             - source (FileStorage): Source .csv file to process.
         """
-        report_id = self._recorver_report_id(source)
+        report_id = self._resolve_report_id(source)
         if EmployeeWorkReport.query.filter_by(id=report_id).count() != 0:
             raise EmployeeControllerException('Source file already processed')
 

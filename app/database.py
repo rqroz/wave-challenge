@@ -19,7 +19,7 @@ def get_db_uri():
         - (str): Connection string.
     """
     if Config.DEBUG:
-        return 'sqlite:///../local.db'
+        return f'sqlite:///../{Config.ENVIRONMENT}.db'
 
     dbc = Config.Database
     return f'postgresql://{dbc.USER}:{dbc.PASS}@{dbc.HOST}:{dbc.PORT}/{dbc.NAME}'
