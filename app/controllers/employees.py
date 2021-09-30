@@ -1,5 +1,5 @@
 """
-Employee-related controller module.
+Employee-related controller.
 """
 import calendar
 import csv
@@ -8,7 +8,8 @@ import datetime
 import io
 
 from flask import g
-from typing import List, Dict
+from typing import Dict, List, Optional
+from sqlalchemy.orm.scoping import scoped_session
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
@@ -25,12 +26,36 @@ class EmployeeController(object):
     """
     Controller to encapsulate employee-related data/logic manipulations.
     """
-    def __init__(self, db_session=None):
+    def __init__(self, db_session: Optional[scoped_session] = None):
+        """
+        Class constructor.
+
+        Args:
+            - db_session (Optional[scoped_session]): Current database session.
+                                                     When not informed, defaults to the session present in the
+                                                     application context g.
+        """
         if not db_session:
             db_session = g.db.session
         self.db_session = db_session
 
     def _recorver_report_id(self, source: FileStorage) -> int:
+        """
+        Resolves the report id from a certain source file.
+
+        Raises:
+            - EmployeeControllerException:
+                - IF unable to properly split the filename;
+                - IF unable to convert the designated portion of the filename that corresponds to the report id
+                into an integer;
+                - IF the filename does not match the pattern "time-report-{id}.csv".
+
+        Args:
+            - source (FileStorage): Source file to extract report id.
+
+        Returns:
+            - report_id (int): Id of the report.
+        """
         default_error_msg = 'Invalid filename. Please inform a file named "time-report-{id}.csv"'
 
         filename = secure_filename(source.filename)
@@ -46,6 +71,17 @@ class EmployeeController(object):
         return report_id
 
     def process_csv(self, source: FileStorage):
+        """
+        Processes a CSV file in order to extract employee's work information.
+
+        Raises:
+            - EmployeeControllerException:
+                - IF unable to extract the report id from the filename;
+                - IF the report file has already been processed.
+
+        Args:
+            - source (FileStorage): Source .csv file to process.
+        """
         report_id = self._recorver_report_id(source)
         if EmployeeWorkReport.query.filter_by(id=report_id).count() != 0:
             raise EmployeeControllerException('Source file already processed')
@@ -81,11 +117,19 @@ class EmployeeController(object):
             )
             self.db_session.add(work_unit_data)
             self.db_session.flush()
-
         self.db_session.commit()
 
 
     def _get_period(self, date: datetime.date) -> Dict[str, str]:
+        """
+        Resolves the period (start and end date) that a certain date is in.
+
+        Args:
+            - date (datetime.date): Date object to be analized.
+
+        Returns:
+            - (Dict[str, str]): Map detailing correct period for the date argument.
+        """
         if date.day < 15:
             first_day = 1
             final_day = 15
@@ -98,7 +142,13 @@ class EmployeeController(object):
             'endDate': date.replace(day=final_day).isoformat(),
         }
 
-    def generate_report(self) -> List[Dict[str, str]]:
+    def generate_report(self) -> List[Dict[str, any]]:
+        """
+        Generates an employee report detailing wages per period.
+
+        Returns:
+            - result (List[Dict[str, any]]): List of period data, identifying employee and total amount paid.
+        """
         ordering = [EmployeeWorkUnit.employee_id.asc(), EmployeeWorkUnit.date.asc()]
         work_units = EmployeeWorkUnit.query.order_by(*ordering).all()
 
@@ -113,7 +163,8 @@ class EmployeeController(object):
 
         result = []
         for item in data.values():
-            amount_str = '{:.2f}'.format(item.pop('amount'))
-            item['amountPaid'] = f'${amount_str}'
-            result.append(item)
+            amount = item.pop('amount')
+            if amount > 0:
+                item['amountPaid'] = '${:.2f}'.format(amount)
+                result.append(item)
         return result

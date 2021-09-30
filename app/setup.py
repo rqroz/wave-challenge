@@ -1,7 +1,6 @@
-import os
-import json
-import structlog
-
+"""
+Application's starting point.
+"""
 from flask import Flask
 
 from app.config import Config
@@ -10,32 +9,17 @@ from app.errors import errors_setup
 from app.database import database_setup
 from app.blueprints import views_setup
 
-def create_app(test_config=None):
-    # create and configure the app
+def create_app():
+    """
+    Creates and configures the application.
+
+    Returns:
+        - app (Flask): Application instance.
+    """
     app = Flask(__name__)
-    app.config.from_mapping(
-        SECRET_KEY=Config.SECRET_KEY,
-        DATABASE=os.path.join(app.instance_path, 'sqlite'),
-    )
-    logging_setup()
+    app.config.from_mapping(SECRET_KEY=Config.SECRET_KEY)
+    logging_setup(app)
     errors_setup(app)
     database_setup(app)
     views_setup(app)
-
-    @app.after_request
-    def log_access(response):
-        data = '<not printable>'
-        if response.headers.get('Content-Type') == 'application/json':
-            try:
-                data = response.get_data().decode('utf-8')
-            except UnicodeDecodeError:
-                pass
-
-        try:
-            log_message = json.loads(data)
-        except json.JSONDecodeError:
-            log_message = data
-        structlog.get_logger('access').info('RESPONSE', status=response.status_code, data=log_message)
-        return response
-
     return app

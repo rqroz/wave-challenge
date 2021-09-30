@@ -13,7 +13,7 @@ BLUEPRINT = Blueprint('employees', __name__, url_prefix='/employees')
 @BLUEPRINT.route('/csv', methods=['POST'])
 def process_employees_csv():
     """
-    Processes CSV file with employee information.
+    Processes a CSV file with employee information.
     """
     try:
         source = request.files['source']

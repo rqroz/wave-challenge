@@ -1,11 +1,12 @@
 """
 Application logger configuration.
 """
+import json
 import structlog
 import logging
 import logging.config
 
-from flask import request
+from flask import Flask, request
 
 from app.config import Config
 
@@ -32,7 +33,7 @@ class HealthFilter(logging.Filter):
         return '/health' not in request.get('path') if request else True
 
 
-def logging_setup():
+def configure_logging():
     """
     Logging setup.
     """
@@ -97,3 +98,23 @@ def logging_setup():
         wrapper_class=structlog.stdlib.BoundLogger,
         cache_logger_on_first_use=True,
     )
+
+
+def logging_setup(app: Flask):
+    configure_logging()
+
+    @app.after_request
+    def log_access(response):
+        data = '<not printable>'
+        if response.headers.get('Content-Type') == 'application/json':
+            try:
+                data = response.get_data().decode('utf-8')
+            except UnicodeDecodeError:
+                pass
+
+        try:
+            log_message = json.loads(data)
+        except json.JSONDecodeError:
+            log_message = data
+        structlog.get_logger('access').info('RESPONSE', status=response.status_code, data=log_message)
+        return response

@@ -11,9 +11,9 @@ BLUEPRINT = Blueprint('health', __name__, url_prefix='/health')
 
 
 @BLUEPRINT.route('', methods=['GET'])
-def process_employees_csv():
+def health_check():
     """
-    Processes CSV file with employee information.
+    Simple view to verify the server's state.
     """
     return jsonify({
         'status': 'ok',
