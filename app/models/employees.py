@@ -2,6 +2,7 @@
 Employee-related models.
 """
 from sqlalchemy import Column, Float, ForeignKey, Integer, String, Date
+from sqlalchemy.orm import relationship
 
 from app.database import DATABASE
 
@@ -36,3 +37,5 @@ class EmployeeWorkUnit(DATABASE.Model):
     report_id = Column(Integer, ForeignKey(EmployeeWorkReport.id), nullable=False)
     hours_worked = Column(Float, nullable=False)
     date = Column(Date, nullable=False)
+
+    employee = relationship(Employee, uselist=False)

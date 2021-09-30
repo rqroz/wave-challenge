@@ -1,8 +1,10 @@
 """
 Employee-related controller module.
 """
+import calendar
 import csv
 import datetime
+
 import io
 
 from flask import g
@@ -10,6 +12,7 @@ from typing import List, Dict
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
+from app.constants.employees import JOB_GROUP_WAGES
 from app.models.employees import Employee, EmployeeWorkReport, EmployeeWorkUnit
 
 
@@ -81,5 +84,41 @@ class EmployeeController(object):
 
         self.db_session.commit()
 
+
+    def _get_period(self, date: datetime.date) -> Dict[str, str]:
+        if date.day < 15:
+            first_day = 1
+            final_day = 15
+        else:
+            first_day = 16
+            final_day = calendar.monthrange(date.year, date.month)[1]
+
+        return {
+            'startDate': date.replace(day=first_day).isoformat(),
+            'endDate': date.replace(day=final_day).isoformat(),
+        }
+
     def generate_report(self) -> List[Dict[str, str]]:
-        return []
+        ordering = [EmployeeWorkUnit.employee_id.asc(), EmployeeWorkUnit.date.asc()]
+        work_units = EmployeeWorkUnit.query.order_by(*ordering).all()
+
+        data = {}
+        for work_unit in work_units:
+            employee_id = work_unit.employee_id
+            if not data.get(employee_id):
+                data[employee_id] = {}
+
+            period = self._get_period(work_unit.date)
+            period_slug = f'{period["startDate"]}_{period["endDate"]}'
+            if not data[employee_id].get(period_slug):
+                data[employee_id][period_slug] = {'amount': 0, 'payPeriod': period, 'employeeId': str(employee_id)}
+            data[employee_id][period_slug]['amount'] += JOB_GROUP_WAGES[work_unit.employee.job_group] * work_unit.hours_worked
+
+        result = []
+        for employee_item in data.values():
+            items = list(employee_item.values())
+            for item in items:
+                amount_str = '{:.2f}'.format(item.pop('amount'))
+                item['amountPaid'] = f'${amount_str}'
+            result += items
+        return result
