@@ -105,20 +105,15 @@ class EmployeeController(object):
         data = {}
         for work_unit in work_units:
             employee_id = work_unit.employee_id
-            if not data.get(employee_id):
-                data[employee_id] = {}
-
             period = self._get_period(work_unit.date)
-            period_slug = f'{period["startDate"]}_{period["endDate"]}'
-            if not data[employee_id].get(period_slug):
-                data[employee_id][period_slug] = {'amount': 0, 'payPeriod': period, 'employeeId': str(employee_id)}
-            data[employee_id][period_slug]['amount'] += JOB_GROUP_WAGES[work_unit.employee.job_group] * work_unit.hours_worked
+            period_slug = f'{period["startDate"]}_{period["endDate"]}_{employee_id}'
+            if not data.get(period_slug):
+                data[period_slug] = {'amount': 0, 'payPeriod': period, 'employeeId': str(employee_id)}
+            data[period_slug]['amount'] += JOB_GROUP_WAGES[work_unit.employee.job_group] * work_unit.hours_worked
 
         result = []
-        for employee_item in data.values():
-            items = list(employee_item.values())
-            for item in items:
-                amount_str = '{:.2f}'.format(item.pop('amount'))
-                item['amountPaid'] = f'${amount_str}'
-            result += items
+        for item in data.values():
+            amount_str = '{:.2f}'.format(item.pop('amount'))
+            item['amountPaid'] = f'${amount_str}'
+            result.append(item)
         return result
